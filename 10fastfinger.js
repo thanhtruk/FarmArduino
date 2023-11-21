@@ -27,9 +27,9 @@ document.addEventListener("keyup", function (event) {
             document.getElementById('incorrectCount').textContent = parseInt(document.getElementById('incorrectCount').textContent) + 1;
         }
         textarea.value = '';
-        const words = ['apple', 'banana', 'orange', 'grape', 'kiwi']; // Danh sách từ để chọn ngẫu nhiên
-        const randomIndex = Math.floor(Math.random() * words.length); // Chọn một chỉ số ngẫu nhiên
-        const randomWord = words[randomIndex]; // Lấy từ tại chỉ số ngẫu nhiên
-        document.getElementById('random-word').textContent = randomWord; // Hiển thị từ ngẫu nhiên
+        const words = ['apple', 'banana', 'orange', 'grape', 'kiwi'];
+        const randomIndex = Math.floor(Math.random() * words.length);
+        const randomWord = words[randomIndex];
+        document.getElementById('random-word').textContent = randomWord;
     }
 });
