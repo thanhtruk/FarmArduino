@@ -1,0 +1,15 @@
+.container {
+    width: 300px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.control-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.light-intensity-slider {
+    width: 100%;
+}

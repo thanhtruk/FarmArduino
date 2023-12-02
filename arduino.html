@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyboard</title>
+    <link rel="stylesheet" href="arduino.css">
+
+</head>
+
+<body>
+    <div class="container">
+        <h1>Control Panel - Mái Che</h1>
+
+        <!-- Vùng điều chỉnh cường độ ánh sáng -->
+        <label for="light-intensity">Cường độ ánh sáng:</label>
+        <input onchange="showLightIntensity()" type="range" min="0" max="100" value="50" class="light-intensity-slider"
+            id="light-intensity">
+        <span id="light-intensity-value">50</span>
+
+        <!-- Nút điều khiển mái che -->
+        <div class="control-buttons">
+            <button onclick="openRoof()">Mở mái che</button>
+            <button onclick="closeRoof()">Đóng mái che</button>
+        </div>
+    </div>
+    <script src="arduino.js">
+    </script>
+</body>
+
+</html>
