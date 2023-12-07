@@ -5,23 +5,31 @@
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
-// #include <NTPtime.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+
 #ifndef APSSID
-#define APSSID "HSU_Students"  // existing Wifi network
-#define APPSK "dhhs12cnvch"
+#define APSSID "Minh Vang"  // existing Wifi network
+#define APPSK "choxincaighe"
 #endif
-/* Set these to your desired credentials. */
+
 const char *ssid = APSSID;
 const char *password = APPSK;
-const char *URL = "http://10.106.26.221:8081/add";
+const char *URL = "http://192.168.1.5:8081/add";
+
 WiFiClient client;
 HTTPClient http;
 ESP8266WebServer server(80);
 
-const int pirPin = D2;    // Chân cảm biến PIR kết nối với chân D2 của Wemos D1 R2
-const int buzzerPin = D5; // Chân loa kết nối với chân D5 của Wemos D1 R2
+const int pirPin = D2;    // PIR sensor connected to D2
+const int buzzerPin = D5; // Buzzer connected to D5
 
 unsigned long startTime;
+bool motionSensorActive = true;  // Variable to indicate if the motion sensor is active
+
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org");  // You can change the NTP server if needed
+
 void setup() {
   pinMode(pirPin, INPUT);
   pinMode(buzzerPin, OUTPUT);
@@ -38,62 +46,85 @@ void setup() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+
+  timeClient.begin();  // Initialize the NTP client
+
   server.on("/", handleOnConnect);
+  server.on("/activate", handleActivate);  // New endpoint to activate the sensor
+  server.on("/deactivate", handleDeactivate);  // New endpoint to deactivate the sensor
   server.enableCORS(true);
   server.begin();
   Serial.println("HTTP server started");
   startTime = millis();
 }
+
 void loop() {
   server.handleClient();
-  long duration = millis() - startTime;  // thời gian bằng giá trị hiện tại trừ  giá trị ban đầu 
-  if (duration == 5000) {
+  long duration = millis() - startTime;
+
+  if (motionSensorActive && duration >= 5000) {
     postJsonData();
     startTime = millis();
   }
 
+  timeClient.update();  // Update the NTP client to get the current time
+
   delay(5000);
 }
+
 void handleOnConnect() {
   server.send(200, "text/html", "ok");
 }
+
+void handleActivate() {
+  motionSensorActive = true;
+  server.send(200, "text/html", "Motion sensor activated");
+}
+
+void handleDeactivate() {
+  motionSensorActive = false;
+  server.send(200, "text/html", "Motion sensor deactivated");
+}
+
 void postJsonData() {
   Serial.print("connecting to ");
-  if (WiFi.status() == WL_CONNECTED) {
+
+  if (WiFi.status() == WL_CONNECTED && motionSensorActive) {
     Serial.print("[HTTP] begin...\n");
-    if (http.begin(client, URL)) {  // HTTP
+
+    if (http.begin(client, URL)) {
       Serial.print("[HTTP] POST...\n");
-      //gui du lieu len server dang JSON
+
       const int capacity = JSON_OBJECT_SIZE(2000);
       StaticJsonDocument<capacity> doc;
-      /* doc thong tin cam bien vao day */
       int motionSensorValue = 0;
       getDatafromSen(motionSensorValue);
-      
+
       doc["motion_detected"] = motionSensorValue;
-      doc["atTime"] = "2023-12-02";
-      
+      doc["timestamp"] = timeClient.getFormattedTime();
+
       char output[2048];
-      serializeJson(doc, Serial);  // ghi ra man hinh
-      serializeJson(doc, output);  //ghi ra bien output
+      serializeJson(doc, Serial);
+      serializeJson(doc, output);
+
       http.addHeader("Content-Type", "application/json");
       int httpCode = http.POST(output);
       Serial.println(httpCode);
-      http.end();  //Close connection Serial.println();
+      http.end();
       Serial.println("closing connection");
     }
   }
 }
 
-void getDatafromSen(int motionSensorValue){
- motionSensorValue = digitalRead(pirPin);
+void getDatafromSen(int &motionSensorValue) {
+  motionSensorValue = digitalRead(pirPin);
 
   if (motionSensorValue == HIGH) {
     Serial.println(motionSensorValue);
-    digitalWrite(buzzerPin, HIGH); // Bật âm thanh
-    delay(1000); // Đợi 1 giây
-    digitalWrite(buzzerPin, LOW); // Tắt âm thanh
+    digitalWrite(buzzerPin, HIGH);
+    delay(1000);
+    digitalWrite(buzzerPin, LOW);
   }
 
-  delay(100); // Đợi 0.1 giây trước khi kiểm tra lại              
+  delay(100);
 }
